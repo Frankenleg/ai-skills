@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Install each skill's runtime files into the Claude Code and Codex skill dirs.
 
-For every skills/<name>/ that has a SKILL.md, copy SKILL.md + scaffold.py
-(never test_*.py) into the agents' skill-discovery directories:
+For every skills/<name>/ that has a SKILL.md, copy the whole skill directory
+(excluding test_*.py, __pycache__/, and *.pyc) into the agents'
+skill-discovery directories:
   - Claude Code: ~/.claude/skills/<name>/
   - Codex:       $CODEX_HOME/skills/<name>/  (default ~/.codex/skills/<name>/)
-Idempotent: overwrites the two runtime files in place.
+Idempotent: overwrites the runtime files in place.
 
 Note: Codex discovers skills under $CODEX_HOME/skills (per its bundled
 skill-creator/skill-installer), NOT under ~/.agents/skills — that path is for
@@ -19,7 +20,28 @@ import shutil
 import sys
 from pathlib import Path
 
-RUNTIME_FILES = ("SKILL.md", "scaffold.py")
+
+def _is_excluded(rel) -> bool:
+    """test_*.py, __pycache__/, and *.pyc are never installed."""
+    parts = rel.parts
+    if any(p == "__pycache__" for p in parts):
+        return True
+    if rel.suffix == ".pyc":
+        return True
+    if rel.name.startswith("test_") and rel.suffix == ".py":
+        return True
+    return False
+
+
+def runtime_files(skill_dir):
+    """Sorted relative paths of a skill's installable files (excludes tests/caches)."""
+    skill_dir = Path(skill_dir)
+    rels = [
+        p.relative_to(skill_dir)
+        for p in skill_dir.rglob("*")
+        if p.is_file() and not _is_excluded(p.relative_to(skill_dir))
+    ]
+    return sorted(rels)
 
 
 def default_claude_dir() -> Path:
@@ -57,12 +79,11 @@ def install(skills_root, dests, names=None) -> dict:
     for skill in skills:
         for dest_root in dests:
             dest = Path(dest_root) / skill.name
-            dest.mkdir(parents=True, exist_ok=True)
-            for fname in RUNTIME_FILES:
-                src = skill / fname
-                if src.exists():
-                    shutil.copy2(src, dest / fname)
-                    report["copied"].append(str(dest / fname))
+            for rel in runtime_files(skill):
+                target = dest / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(skill / rel, target)
+                report["copied"].append(str(target))
     return report
 
 

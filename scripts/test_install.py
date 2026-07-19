@@ -90,3 +90,26 @@ def test_default_codex_dir_falls_back_to_dot_codex(monkeypatch, tmp_path):
 def test_default_claude_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(inst.Path, "home", staticmethod(lambda: tmp_path))
     assert inst.default_claude_dir() == tmp_path / ".claude" / "skills"
+
+
+def test_install_copies_subdirectories(tmp_path):
+    skills = tmp_path / "skills"
+    (skills / "prose" / "agents").mkdir(parents=True)
+    (skills / "prose" / "SKILL.md").write_text("s", encoding="utf-8")
+    (skills / "prose" / "agents" / "openai.yaml").write_text("y", encoding="utf-8")
+    dest = tmp_path / "claude"
+    report = inst.install(skills, [dest])
+    assert (dest / "prose" / "SKILL.md").read_text(encoding="utf-8") == "s"
+    assert (dest / "prose" / "agents" / "openai.yaml").read_text(encoding="utf-8") == "y"
+    assert len(report["copied"]) == 2  # SKILL.md + agents/openai.yaml
+
+
+def test_runtime_files_excludes_tests_and_caches(tmp_path):
+    skill = tmp_path / "s"
+    (skill / "__pycache__").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("s", encoding="utf-8")
+    (skill / "scaffold.py").write_text("c", encoding="utf-8")
+    (skill / "test_scaffold.py").write_text("t", encoding="utf-8")
+    (skill / "__pycache__" / "scaffold.cpython-312.pyc").write_text("x", encoding="utf-8")
+    names = {p.as_posix() for p in inst.runtime_files(skill)}
+    assert names == {"SKILL.md", "scaffold.py"}
