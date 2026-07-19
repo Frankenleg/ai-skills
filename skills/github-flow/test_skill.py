@@ -32,3 +32,14 @@ def test_is_prose_skill_no_scaffold():
 
 def test_agents_metadata_present():
     assert (SKILL_DIR / "agents" / "openai.yaml").exists()
+
+
+def test_skill_md_is_agent_neutral():
+    # github-flow installs to both Claude Code and Codex, so its SKILL.md
+    # (trigger + body) must not hardcode a single agent's name. Agent-specific
+    # metadata belongs in agents/<agent>.yaml, not here.
+    text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").lower()
+    for agent in ("codex", "claude"):
+        assert agent not in text, (
+            f"github-flow is cross-agent; SKILL.md must not name {agent!r}"
+        )
