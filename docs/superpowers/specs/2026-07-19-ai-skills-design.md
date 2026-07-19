@@ -52,24 +52,32 @@ ai-skills/
 
 ## Skill model (script-driven)
 
-Each `SKILL.md` is short: the **agent** determines the project name and one-line
-description (the judgment part, keeping the dir-name fallback for auto mode),
-then runs the skill's `scaffold.py` with those values as CLI args. Because the
-agent builds the command line, this **sidesteps Codex's lack of argument
-placeholders** — the script always receives clean, deterministic inputs on
+Each `SKILL.md` is short: the **agent** supplies the project name and one-line
+description when it has them (the judgment part), then runs the skill's
+`scaffold.py`. Because the agent builds the command line, this **sidesteps
+Codex's lack of argument placeholders** — the script receives clean inputs on
 either agent.
+
+Crucially, the **fallback lives in `scaffold.py`, not the prose**: if `--name`
+is omitted the script defaults it to the current directory's basename; if
+`--description` is omitted it uses the literal placeholder
+`<one-line description — fill in>`. This keeps auto-mode behavior deterministic
+and **testable** (Test C). The `SKILL.md` just tells the agent to pass what it
+knows and report any defaults that kicked in.
 
 `scaffold.py` contracts (per skill, standalone):
 
 ### `new-project/scaffold.py`
-- Args: `--name`, `--description` (both required; the SKILL.md/agent supply them).
+- Args: `--name` (default: current dir basename), `--description` (default: the
+  literal placeholder). Agent passes them when known.
 - Behavior: create `AGENTS.md` (light skeleton with the given name/description)
   and `CLAUDE.md` (`@AGENTS.md` + comment). **Never** touches git. Does not
   overwrite existing `AGENTS.md`/`CLAUDE.md` (reports and skips).
 - Output: report of files created vs. skipped.
 
 ### `new-git-project/scaffold.py`
-- Args: `--name`, `--description`.
+- Args: `--name` (default: current dir basename), `--description` (default: the
+  literal placeholder). Agent passes them when known.
 - Behavior (additive & idempotent):
   1. `git init` on `main` if not already a repo.
   2. Create `.gitignore` if absent; `.gitattributes` if absent.
