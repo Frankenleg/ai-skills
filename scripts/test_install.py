@@ -31,3 +31,44 @@ def test_discover_skills_requires_skill_md(tmp_path):
     (skills / "notaskill").mkdir(parents=True)  # no SKILL.md
     found = [p.name for p in inst.discover_skills(skills)]
     assert found == ["real"]
+
+
+def _make_skill(skills_root, name):
+    d = skills_root / name
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_text(name, encoding="utf-8")
+    (d / "scaffold.py").write_text(name, encoding="utf-8")
+
+
+def test_install_selected_skill_only(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    _make_skill(skills, "beta")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest], names=["beta"])
+    assert (dest / "beta" / "SKILL.md").exists()
+    assert not (dest / "alpha").exists()
+
+
+def test_install_all_when_no_names(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    _make_skill(skills, "beta")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest])  # names omitted -> all
+    assert (dest / "alpha" / "SKILL.md").exists()
+    assert (dest / "beta" / "SKILL.md").exists()
+
+
+def test_install_unknown_skill_raises(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    dest = tmp_path / "claude"
+    try:
+        inst.install(skills, [dest], names=["nope"])
+    except ValueError as e:
+        assert "nope" in str(e)
+        assert "alpha" in str(e)  # lists what is available
+    else:
+        raise AssertionError("expected ValueError for unknown skill")
+    assert not (dest / "alpha").exists()  # nothing installed on error

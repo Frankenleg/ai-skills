@@ -46,6 +46,12 @@ That copies every skill under `skills/` into both directories, creating them if
 needed and overwriting the two runtime files in place (idempotent — safe to
 re-run to update). It uses only the Python standard library.
 
+Install just one (or a few) by naming them; an unknown name errors and installs
+nothing:
+
+    python scripts/install.py new-git-project
+    python scripts/install.py new-project new-git-project
+
 Override any path (useful for automation, testing, or a non-default home):
 
     python scripts/install.py \
