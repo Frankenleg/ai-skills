@@ -874,4 +874,4 @@ git commit -m "Add scripts/install.py with test"
 
 **Type consistency:** `scaffold(target, name, description)` signature identical across both skills; `_write`/`render_agents` helpers consistent; `install(skills_root, dests)` matches test calls; report dict keys (`created`/`skipped` for new-project; `git_init`/`created`/`found`/`commit` for new-git-project; `copied` for install) used consistently in code and tests.
 
-**Deferred (out of scope, per spec):** CI workflow; remote creation; the migration steps (install to machine, ai-maintenance repoint, windows-setup update) happen AFTER pytest is green.
+**Deferred (out of scope, per spec):** CI workflow; remote creation; the migration steps (install to machine, ai-maintenance repoint, downstream provisioning-repo update) happen AFTER pytest is green.
