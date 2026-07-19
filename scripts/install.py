@@ -85,13 +85,16 @@ RECEIPT_NAME = ".ai-skills-install.json"
 
 
 def skill_hash(skill_dir) -> str:
-    h = hashlib.sha256()
+    outer = hashlib.sha256()
     for rel in runtime_files(skill_dir):
-        h.update(rel.as_posix().encode("utf-8"))
-        h.update(b"\0")
-        h.update((Path(skill_dir) / rel).read_bytes())
-        h.update(b"\0")
-    return h.hexdigest()
+        file_digest = hashlib.sha256(
+            (Path(skill_dir) / rel).read_bytes()
+        ).hexdigest()  # fixed 64-char hex, contains no NUL
+        outer.update(rel.as_posix().encode("utf-8"))
+        outer.update(b"\0")
+        outer.update(file_digest.encode("ascii"))
+        outer.update(b"\0")
+    return outer.hexdigest()
 
 
 def source_commit(repo_root):

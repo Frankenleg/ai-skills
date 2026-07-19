@@ -204,6 +204,17 @@ def test_receipt_hash_is_per_skill_independent(tmp_path):
     assert r2["skills"]["beta"]["hash"] != r1["skills"]["beta"]["hash"]
 
 
+def test_skill_hash_injective_with_embedded_nul(tmp_path):
+    a = tmp_path / "one"
+    a.mkdir()
+    (a / "a").write_bytes(b"\x00b\x00")          # single file, NUL-laden content
+    b = tmp_path / "two"
+    b.mkdir()
+    (b / "a").write_bytes(b"")                     # two empty files
+    (b / "b").write_bytes(b"")
+    assert inst.skill_hash(a) != inst.skill_hash(b)
+
+
 def test_install_partial_merges_receipt(tmp_path):
     skills = tmp_path / "skills"
     _make_skill(skills, "alpha")
