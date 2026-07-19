@@ -1,5 +1,6 @@
 # Normalize line endings: store LF in the repo, check out native per-OS.
 * text=auto
 
-# Shell scripts must stay LF so they run on all platforms.
+# Shell scripts and the git hook must stay LF so they run on all platforms.
 *.sh text eol=lf
+.githooks/pre-commit text eol=lf

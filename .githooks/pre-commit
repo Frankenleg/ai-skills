@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# Pre-commit secret scan (this repo is public — keep secrets out).
+# Enable once per clone:  git config core.hooksPath .githooks
+# Requires gitleaks:      https://github.com/gitleaks/gitleaks
+#   winget install gitleaks   |   brew install gitleaks   |   scoop install gitleaks
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  printf '\033[33m[pre-commit] gitleaks not installed — secret scan SKIPPED.\033[0m\n' >&2
+  printf '  Install it to enable scanning: https://github.com/gitleaks/gitleaks\n' >&2
+  exit 0
+fi
+
+# Scan only what is staged. --redact hides any matched secret value in output.
+if ! gitleaks protect --staged --redact --no-banner; then
+  printf '\033[31m[pre-commit] gitleaks flagged a potential secret in staged changes — commit blocked.\033[0m\n' >&2
+  printf '  Review the finding above. If it is a genuine false positive, allowlist it in a\n' >&2
+  printf '  .gitleaks.toml (do NOT put real secrets/identifiers there), or as a last resort\n' >&2
+  printf '  commit with --no-verify.\n' >&2
+  exit 1
+fi
+
+exit 0

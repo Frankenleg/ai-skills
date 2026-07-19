@@ -5,6 +5,17 @@ tests. The canonical home for reusable skills: each skill's deterministic core
 lives in a bundled Python script, tested here, and installs into both agents'
 skill directories.
 
+## Public repository — keep it clean
+
+**This repo is public.** Never commit proprietary, personal, or sensitive
+information: no secrets/keys/tokens/`.env`, no real usernames/emails/internal
+hostnames/IPs, no employer/client content. Use placeholders (`<you>`,
+`~/.claude/…`) in examples. When in doubt, leave it out — and remember git
+history is public too. A **gitleaks pre-commit hook** in `.githooks/` blocks
+commits containing secrets; enable it once per clone with
+`git config core.hooksPath .githooks` (needs
+[gitleaks](https://github.com/gitleaks/gitleaks) installed).
+
 ## Stack & layout
 
 - **Python** (skill scaffolders) + **pytest** (tests).
