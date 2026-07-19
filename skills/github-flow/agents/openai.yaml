@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Flow"
+  short_description: "Use feature branches, PRs, merges, and branch cleanup"
+  default_prompt: "Use GitHub Flow for this git task."

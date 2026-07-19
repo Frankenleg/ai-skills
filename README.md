@@ -1,8 +1,9 @@
 # ai-skills
 
-Cross-agent AI agent skills (Claude Code + Codex) — **script-driven** skills with
-tests. Each skill's deterministic core lives in a bundled Python `scaffold.py`,
-tested here, and installs into both agents' skill directories.
+Cross-agent AI agent skills (Claude Code + Codex). Most skills are
+**script-driven**: each skill's deterministic core lives in a bundled Python
+`scaffold.py`, tested here. Some skills are prose-only. All install into both
+agents' skill directories.
 
 This repo is the **single source of truth** for these skills: the skill files +
 tests live here once; other repos *reference* this repo rather than copy the
@@ -14,13 +15,18 @@ skills into themselves.
 |-------|--------------|------------|
 | [`new-project`](skills/new-project/SKILL.md) | Scaffold agent instruction files: a light canonical `AGENTS.md` + a `CLAUDE.md` that imports it. Never touches git. | no |
 | [`new-git-project`](skills/new-git-project/SKILL.md) | Everything `new-project` does **plus** `git init` on `main`, minimal `.gitignore` + `.gitattributes`, and an initial commit. Never creates a remote. | yes (`git` on PATH) |
+| [`github-flow`](skills/github-flow/SKILL.md) | Enforce Feature Branch Workflow / GitHub Flow: branch, commit, PR, merge, cleanup. Prose skill (no script). | yes (git/gh) |
 
-Each skill is fully standalone: `skills/<name>/` holds `SKILL.md` + `scaffold.py`
-+ `test_scaffold.py`, and the two skills share no code. The `SKILL.md` tells the
-agent to pass the project name and one-line description it knows; the fallback
-(name → current directory basename, description → literal placeholder) lives in
-`scaffold.py` so it is deterministic and tested. Both scaffolds are idempotent
-and never overwrite an existing `AGENTS.md`/`CLAUDE.md`.
+Each script-driven skill is fully standalone: `skills/<name>/` holds `SKILL.md`
++ `scaffold.py` + `test_scaffold.py`, and skills share no code. The `SKILL.md`
+tells the agent to pass the project name and one-line description it knows; the
+fallback (name → current directory basename, description → literal placeholder)
+lives in `scaffold.py` so it is deterministic and tested. Both scaffolds are
+idempotent and never overwrite an existing `AGENTS.md`/`CLAUDE.md`.
+
+A skill is any `skills/<name>/` containing a `SKILL.md`. A `scaffold.py` is
+optional: **script-driven** skills bundle one (with tests); **prose** skills
+(like `github-flow`) are `SKILL.md` plus any support files (e.g. `agents/`).
 
 ## Requirements
 
@@ -30,8 +36,8 @@ and never overwrite an existing `AGENTS.md`/`CLAUDE.md`.
 
 ## Install
 
-Installs each skill's **runtime files** — `SKILL.md` + `scaffold.py` (never the
-`test_*.py`) — into both agents' skill directories:
+Installs each skill's files — the **entire** `skills/<name>/` tree except
+`test_*.py` and `__pycache__` — into both agents' skill directories:
 
 - Claude Code reads `~/.claude/skills/<name>/`
 - Codex reads `$CODEX_HOME/skills/<name>/` (default `~/.codex/skills/<name>/`)
@@ -48,7 +54,7 @@ From a clone of this repo:
     python scripts/install.py
 
 That copies every skill under `skills/` into both directories, creating them if
-needed and overwriting the two runtime files in place (idempotent — safe to
+needed and overwriting each skill's files in place (idempotent — safe to
 re-run to update). It uses only the Python standard library.
 
 Install just one (or a few) by naming them; an unknown name errors and installs
@@ -73,26 +79,35 @@ If a provisioning repo prefers to diff and copy the files itself rather than
 shell out to Python, replicate exactly what `install.py` does — for **each**
 `skills/<name>/`:
 
-1. Copy `skills/<name>/SKILL.md`   → `~/.claude/skills/<name>/SKILL.md`
-2. Copy `skills/<name>/scaffold.py` → `~/.claude/skills/<name>/scaffold.py`
-3. Copy the same two files          → `~/.codex/skills/<name>/…`
-4. **Do not** copy `test_scaffold.py` — tests stay in this repo, never installed.
+1. Copy the entire `skills/<name>/` tree → `~/.claude/skills/<name>/…`
+2. Copy the same tree                    → `~/.codex/skills/<name>/…`
+3. **Skip** any `test_*.py` file and any `__pycache__/` directory — tests and
+   caches stay in this repo, never installed.
 
 ### What gets installed (source → destination)
 
-| Source (in this repo)            | Claude Code dest                       | Codex dest (`$CODEX_HOME` or `~/.codex`) |
-|----------------------------------|----------------------------------------|------------------------------------------|
-| `skills/<name>/SKILL.md`         | `~/.claude/skills/<name>/SKILL.md`     | `~/.codex/skills/<name>/SKILL.md`        |
-| `skills/<name>/scaffold.py`      | `~/.claude/skills/<name>/scaffold.py`  | `~/.codex/skills/<name>/scaffold.py`     |
-| `skills/<name>/test_scaffold.py` | *not installed*                        | *not installed*                          |
+| Source (in this repo)                        | Claude Code dest                            | Codex dest (`$CODEX_HOME` or `~/.codex`) |
+|-----------------------------------------------|----------------------------------------------|------------------------------------------|
+| `skills/<name>/**` (except `test_*.py`, `__pycache__`) | `~/.claude/skills/<name>/…`         | `~/.codex/skills/<name>/…`               |
+| `skills/<name>/test_*.py`, `__pycache__/`      | *not installed*                              | *not installed*                          |
+
+### Check what's installed
+
+`python scripts/install.py --check [names…]` reports each skill as
+`missing` / `current` / `stale` (byte comparison) and exits non-zero if any
+drift — copies nothing. Install writes a receipt `.ai-skills-install.json`
+in each skills dir recording the source git commit and a per-skill SHA-256,
+so you can see exactly which revision of each skill a machine has. The
+receipt's top-level `commit`/`installedAt` reflect the most recent install
+run, not any individual skill — per-skill provenance is the per-skill
+SHA-256 `hash`, which is independent per skill.
 
 ### Consuming from another repo
 
 Other repos reference this one rather than vendoring the skills:
 
-- **windows-setup** (private provisioning) clones `ai-skills` and, in its
-  plan→apply flow, runs `scripts/install.py` (Option A) or diff+copies the
-  runtime files (Option B) into both agent dirs.
+- A **private provisioning repo** can clone this repo at a pinned commit and
+  run `scripts/install.py` (or `--check` first) in its plan→apply flow.
 - **ai-maintenance** (public docs) links here instead of holding skill copies.
 
 ## Usage
@@ -112,10 +127,11 @@ Run the full suite from the repo root:
 
     pytest
 
-It discovers `skills/*/test_scaffold.py` and `scripts/test_install.py` (10 tests).
-Each test runs a scaffolder in an isolated `tmp_path` and cleans up. pytest is
-configured for `--import-mode=importlib` in `pyproject.toml` so the two
-identically-named `test_scaffold.py` files don't collide.
+It discovers `skills/*/test_scaffold.py`, `skills/*/test_skill.py`, and
+`scripts/test_install.py` (32 tests). Each test runs a scaffolder or the
+installer in an isolated `tmp_path` and cleans up. pytest is configured for
+`--import-mode=importlib` in `pyproject.toml` so identically-named test files
+across skill folders don't collide.
 
 ### Secret-scan pre-commit hook
 
@@ -136,10 +152,11 @@ ai-skills/
 ├── README.md
 ├── pyproject.toml                 # pytest config (import-mode=importlib)
 ├── skills/
-│   ├── new-project/               # SKILL.md + scaffold.py + test_scaffold.py
-│   └── new-git-project/           # SKILL.md + scaffold.py + test_scaffold.py
+│   ├── new-project/          # SKILL.md + scaffold.py + test_scaffold.py
+│   ├── new-git-project/      # SKILL.md + scaffold.py + test_scaffold.py
+│   └── github-flow/          # SKILL.md + agents/ + test_skill.py (prose skill)
 ├── scripts/
-│   ├── install.py                 # copy runtime files → both agent dirs
+│   ├── install.py            # copy each skill dir (excl. tests/caches) → both agent dirs; --check reports drift
 │   └── test_install.py
 ├── .githooks/pre-commit           # gitleaks secret scan
 └── docs/superpowers/              # design spec + implementation plan

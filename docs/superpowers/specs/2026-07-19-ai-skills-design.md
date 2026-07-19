@@ -11,7 +11,7 @@ the single-source-of-truth problem: the skill files + tests live here once;
 other repos *reference* rather than *copy*.
 
 - `ai-maintenance` (public docs) **links** to this repo — no skill files.
-- `windows-setup` (private provisioning) **installs** from it via clone + copy in
+- A private provisioning repo **installs** from it via clone + copy in
   its plan→apply flow.
 
 ## Decisions
@@ -25,7 +25,7 @@ other repos *reference* rather than *copy*.
   guard, no `--git` coupling (`new-git-project/scaffold.py` simply does more).
 - **Language:** Python + **pytest**. Portable across Windows/Linux/macOS.
 - **Tests live inside each skill folder** (code + tests together); not installed.
-- **Consumption:** clone + copy (fits windows-setup plan→apply). A `scripts/install.py`
+- **Consumption:** clone + copy (fits a downstream consumer's plan→apply). A `scripts/install.py`
   gives anyone a one-command install.
 - **CI: deferred** (may add a GitHub Actions pytest workflow later).
 
@@ -123,9 +123,9 @@ no unrelated files.
 - **`scripts/install.py`** — for each skill, copy `SKILL.md` + `scaffold.py`
   (skip `test_*.py`) into `~/.claude/skills/<name>/` and `~/.codex/skills/<name>/`
   (`$CODEX_HOME/skills` when set). One-command install for any user.
-- **windows-setup** — clone `ai-skills`; plan→apply copies the same runtime files
-  into both agent dirs (may call `install.py` or diff+copy itself). Update its
-  `phase2-agent-config-sync` note to point at this repo.
+- **A private provisioning repo** — clone `ai-skills`; plan→apply copies the same
+  runtime files into both agent dirs (may call `install.py` or diff+copy itself).
+  Update its agent-config-sync note to point at this repo.
 - **ai-maintenance** — remove `shared/skills/`; turn the scaffolding doc into a
   pointer to `ai-skills` (keeps the concept, links to the repo).
 - **Live machine** — reinstall both skills from `ai-skills` so
@@ -137,7 +137,7 @@ no unrelated files.
    `README.md`, `pyproject.toml`. Run pytest green.
 2. Install to the live machine (`install.py`), replacing the current prose skills.
 3. Update `ai-maintenance`: drop `shared/skills/`, repoint the scaffolding doc.
-4. Update `windows-setup` (memory/plan) to consume `ai-skills`.
+4. Update the downstream private provisioning repo (memory/plan) to consume `ai-skills`.
 
 ## Out of scope / deferred
 
