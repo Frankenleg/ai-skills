@@ -34,7 +34,7 @@ Do not commit directly to `main`, `master`, or the repository default branch unl
    - If checks or review comments need attention, fix them on the same feature branch and update the PR.
 6. Merge:
    - When the user asks to merge, merge the PR rather than bypassing it.
-   - Use the repository's normal merge strategy if discoverable; otherwise prefer squash merge for small single-purpose branches unless the user or repo indicates otherwise.
+   - Honor the repository's configured merge strategy if discoverable; otherwise default to a merge commit (`--merge`). Use squash or rebase only when the user or repo indicates that preference.
 7. Cleanup:
    - Switch back to the default branch.
    - Pull the latest default branch.
