@@ -1,6 +1,6 @@
 ---
 name: github-flow
-description: "Use when the user asks Codex to commit, push, open a pull request, merge, ship, wrap up, publish, or clean up code changes in a git/GitHub repository. Enforce the user's preferred Feature Branch Workflow / GitHub Flow: branch, code and commit, pull request, review and checks, merge, return to main, pull, then delete the feature branch. Do not commit directly to main/master/default unless the user explicitly requests that exception."
+description: "Use when the user asks to commit, push, open a pull request, merge, ship, wrap up, publish, or clean up code changes in a git/GitHub repository. Enforce the user's preferred Feature Branch Workflow / GitHub Flow: branch, code and commit, pull request, review and checks, merge, return to main, pull, then delete the feature branch. Do not commit directly to main/master/default unless the user explicitly requests that exception."
 ---
 
 # GitHub Flow
@@ -34,7 +34,7 @@ Do not commit directly to `main`, `master`, or the repository default branch unl
    - If checks or review comments need attention, fix them on the same feature branch and update the PR.
 6. Merge:
    - When the user asks to merge, merge the PR rather than bypassing it.
-   - Use the repository's normal merge strategy if discoverable; otherwise prefer squash merge for small single-purpose branches unless the user or repo indicates otherwise.
+   - Honor the repository's configured merge strategy if discoverable; otherwise default to a merge commit (`--merge`). Use squash or rebase only when the user or repo indicates that preference.
 7. Cleanup:
    - Switch back to the default branch.
    - Pull the latest default branch.
@@ -49,9 +49,9 @@ Do not commit directly to `main`, `master`, or the repository default branch unl
 - If network or GitHub CLI access is needed and sandboxed, request escalation with a narrow `gh` or `git push` prefix.
 - If the repo has no remote or no GitHub PR path, stop after the local feature-branch commit and explain the missing piece.
 
-## Current-Repo Recovery
+## Recovery: accidental commit on the default branch
 
-If Codex already committed directly to the default branch by mistake and the commit has not been pushed:
+If a commit was already made directly to the default branch by mistake and has not been pushed:
 
 1. Create a feature branch at the current commit.
 2. Move the default branch back to its upstream or prior commit using a non-destructive branch update, avoiding loss of uncommitted changes.
