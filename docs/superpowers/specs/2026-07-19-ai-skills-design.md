@@ -113,16 +113,23 @@ no unrelated files.
 
 ## Install & consumption
 
+> **Correction (2026-07-19):** the Codex skills path below was originally written
+> as `~/.agents/skills` — that is wrong. Codex discovers skills under
+> `$CODEX_HOME/skills` (default `~/.codex/skills`), per its bundled
+> skill-creator/skill-installer. `~/.agents/` is the Codex *plugin* path
+> (`~/.agents/plugins/marketplace.json`), a different concept. `install.py` and
+> the docs use the corrected `~/.codex/skills` path.
+
 - **`scripts/install.py`** — for each skill, copy `SKILL.md` + `scaffold.py`
-  (skip `test_*.py`) into `~/.claude/skills/<name>/` and `~/.agents/skills/<name>/`.
-  One-command install for any user.
+  (skip `test_*.py`) into `~/.claude/skills/<name>/` and `~/.codex/skills/<name>/`
+  (`$CODEX_HOME/skills` when set). One-command install for any user.
 - **windows-setup** — clone `ai-skills`; plan→apply copies the same runtime files
   into both agent dirs (may call `install.py` or diff+copy itself). Update its
   `phase2-agent-config-sync` note to point at this repo.
 - **ai-maintenance** — remove `shared/skills/`; turn the scaffolding doc into a
   pointer to `ai-skills` (keeps the concept, links to the repo).
 - **Live machine** — reinstall both skills from `ai-skills` so
-  `~/.claude/skills` and `~/.agents/skills` get the script-driven versions.
+  `~/.claude/skills` and `~/.codex/skills` get the script-driven versions.
 
 ## Migration (order)
 

@@ -72,3 +72,21 @@ def test_install_unknown_skill_raises(tmp_path):
     else:
         raise AssertionError("expected ValueError for unknown skill")
     assert not (dest / "alpha").exists()  # nothing installed on error
+
+
+def test_default_codex_dir_honors_codex_home(monkeypatch, tmp_path):
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "cx"))
+    assert inst.default_codex_dir() == tmp_path / "cx" / "skills"
+
+
+def test_default_codex_dir_falls_back_to_dot_codex(monkeypatch, tmp_path):
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    monkeypatch.setattr(inst.Path, "home", staticmethod(lambda: tmp_path))
+    # Codex discovers skills under ~/.codex/skills, NOT ~/.agents/skills.
+    assert inst.default_codex_dir() == tmp_path / ".codex" / "skills"
+    assert inst.default_codex_dir() != tmp_path / ".agents" / "skills"
+
+
+def test_default_claude_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(inst.Path, "home", staticmethod(lambda: tmp_path))
+    assert inst.default_claude_dir() == tmp_path / ".claude" / "skills"
