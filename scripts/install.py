@@ -64,17 +64,22 @@ def discover_skills(skills_root):
     )
 
 
-def install(skills_root, dests, names=None) -> dict:
+def _select_skills(skills_root, names):
     skills = discover_skills(skills_root)
-    if names:
-        by_name = {p.name: p for p in skills}
-        unknown = [n for n in names if n not in by_name]
-        if unknown:
-            available = ", ".join(sorted(by_name)) or "(none)"
-            raise ValueError(
-                f"unknown skill(s): {', '.join(unknown)}; available: {available}"
-            )
-        skills = [by_name[n] for n in names]
+    if not names:
+        return skills
+    by_name = {p.name: p for p in skills}
+    unknown = [n for n in names if n not in by_name]
+    if unknown:
+        available = ", ".join(sorted(by_name)) or "(none)"
+        raise ValueError(
+            f"unknown skill(s): {', '.join(unknown)}; available: {available}"
+        )
+    return [by_name[n] for n in names]
+
+
+def install(skills_root, dests, names=None) -> dict:
+    skills = _select_skills(skills_root, names)
     report = {"copied": []}
     for skill in skills:
         for dest_root in dests:
@@ -84,6 +89,32 @@ def install(skills_root, dests, names=None) -> dict:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(skill / rel, target)
                 report["copied"].append(str(target))
+    return report
+
+
+def _classify(skill_dir, installed_dir) -> str:
+    if not Path(installed_dir).exists():
+        return "missing"
+    for rel in runtime_files(skill_dir):
+        inst_file = Path(installed_dir) / rel
+        if not inst_file.exists():
+            return "missing"
+        if (Path(skill_dir) / rel).read_bytes() != inst_file.read_bytes():
+            return "stale"
+    return "current"
+
+
+def check(skills_root, dests, names=None) -> dict:
+    skills = _select_skills(skills_root, names)
+    report = {"skills": {}, "drift": False}
+    for skill in skills:
+        per_dest = {}
+        for dest_root in dests:
+            status = _classify(skill, Path(dest_root) / skill.name)
+            per_dest[str(dest_root)] = {"status": status}
+            if status != "current":
+                report["drift"] = True
+        report["skills"][skill.name] = per_dest
     return report
 
 
@@ -100,9 +131,27 @@ def main(argv=None) -> int:
     parser.add_argument("--codex-dir", default=str(default_codex_dir()),
                         help="Codex skills dir (default: $CODEX_HOME/skills "
                              "or ~/.codex/skills).")
+    parser.add_argument("--check", action="store_true",
+                        help="Report install status (missing/current/stale); copy nothing.")
     args = parser.parse_args(argv)
 
     dests = [Path(args.claude_dir), Path(args.codex_dir)]
+    if args.check:
+        try:
+            report = check(Path(args.skills_root), dests, args.names or None)
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 2
+        for name, per_dest in sorted(report["skills"].items()):
+            statuses = ", ".join(
+                f"{Path(d).name}:{v['status']}" for d, v in per_dest.items()
+            )
+            print(f"{name}: {statuses}")
+        if report["drift"]:
+            print("drift: some skills are missing or stale", file=sys.stderr)
+            return 1
+        print("all skills current")
+        return 0
     try:
         report = install(Path(args.skills_root), dests, args.names or None)
     except ValueError as e:

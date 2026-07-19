@@ -113,3 +113,46 @@ def test_runtime_files_excludes_tests_and_caches(tmp_path):
     (skill / "__pycache__" / "scaffold.cpython-312.pyc").write_text("x", encoding="utf-8")
     names = {p.as_posix() for p in inst.runtime_files(skill)}
     assert names == {"SKILL.md", "scaffold.py"}
+
+
+def test_check_reports_missing_then_current_then_stale(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    dest = tmp_path / "claude"
+
+    r1 = inst.check(skills, [dest])
+    assert r1["skills"]["alpha"][str(dest)]["status"] == "missing"
+    assert r1["drift"] is True
+
+    inst.install(skills, [dest])
+    r2 = inst.check(skills, [dest])
+    assert r2["skills"]["alpha"][str(dest)]["status"] == "current"
+    assert r2["drift"] is False
+
+    (dest / "alpha" / "SKILL.md").write_text("mutated", encoding="utf-8")
+    r3 = inst.check(skills, [dest])
+    assert r3["skills"]["alpha"][str(dest)]["status"] == "stale"
+    assert r3["drift"] is True
+
+
+def test_check_cli_exit_codes(tmp_path, capsys):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    dest = tmp_path / "claude"
+    argv_check = ["--check", "--skills-root", str(skills),
+                  "--claude-dir", str(dest), "--codex-dir", str(tmp_path / "x")]
+    assert inst.main(argv_check) == 1          # missing -> drift -> exit 1
+    inst.main(["--skills-root", str(skills),
+               "--claude-dir", str(dest), "--codex-dir", str(tmp_path / "x")])
+    assert inst.main(argv_check) == 0          # now installed -> exit 0
+
+
+def test_check_unknown_skill_raises(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    try:
+        inst.check(skills, [tmp_path / "d"], names=["nope"])
+    except ValueError as e:
+        assert "nope" in str(e) and "alpha" in str(e)
+    else:
+        raise AssertionError("expected ValueError")
