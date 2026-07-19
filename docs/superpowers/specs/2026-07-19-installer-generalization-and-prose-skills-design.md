@@ -18,8 +18,9 @@ skills and be consumed reproducibly.
    tests), so skills with subdirectories/extra files install correctly.
 3. **Add a `--check` (dry-run) mode** so a consumer can see what is
    missing/stale before installing.
-4. **Add lightweight versioning** so any machine can record and verify which
-   skills-revision it has.
+4. **Add lightweight versioning** so any machine can record and verify — **per
+   skill** — which revision it has, via the source commit SHA plus a per-skill
+   content hash (no hand-maintained version number).
 
 A consumer of this repo (e.g. a downstream provisioning tool) can then clone at
 a pinned commit, run `install.py --check` to plan, and `install.py` to apply —
@@ -38,8 +39,10 @@ with the copy logic living here, once.
   two-file installer silently drops.
 - **`--check` is byte-comparison drift detection**, not just presence: a skill
   whose installed files differ from the repo's is `stale`, not `current`.
-- **Versioning is a `VERSION` file + an install receipt**, canonical here so
-  every consumer benefits (not re-invented downstream).
+- **No hand-maintained version number.** Reproducibility is the git commit SHA
+  (a consumer pins it); per-skill identity is a content hash recorded in an
+  install receipt. This is granular by construction — an unchanged skill's
+  recorded hash never moves when a sibling changes — and needs no manual bumping.
 - **Privacy:** this repo is public. It must not name any private consumer repo.
   Existing references to a specific private provisioning repo (in `README.md`
   and the prior spec/plan) are scrubbed to generic wording as part of this work.
@@ -96,20 +99,35 @@ consumer can gate on the exit code); exit `0` when everything is `current`.
 `--check` respects the same `--claude-dir` / `--agents-dir` / `--skills-root`
 overrides as install.
 
-### 4. Versioning
+### 4. Versioning (commit SHA + per-skill content hash)
 
-- **`VERSION`** file at repo root (e.g. `0.1.0`), bumped when skills change.
-- On install (not `--check`), write a **receipt** to each agent skills dir:
-  `.ai-skills-install.json` = `{ "version": <VERSION>, "commit": <source commit
-  or null>, "installed": [<skill names>], "installedAt": <ISO8601 or null> }`.
-  The commit is read via `git -C <repo> rev-parse HEAD` when the source is a git
-  checkout, else `null`. `installedAt` is set from the system clock at install
-  time.
-- `--check` reads the receipt (if present) and reports the installed `version`
-  alongside the per-skill drift, so "what do I have vs. what's here" is visible.
+No hand-maintained version number and **no repo-level `VERSION` file**.
+Reproducibility comes from the **git commit SHA** (a consumer pins it); per-skill
+identity/drift comes from content. On install (not `--check`), write a
+**receipt** to each agent skills dir, `.ai-skills-install.json`:
 
-The load-bearing drift signal is the per-file byte compare (§3); the receipt is
-the human-facing record and lets a consumer log the installed revision.
+```json
+{
+  "commit": "<source commit SHA, or null if source isn't a git checkout>",
+  "installedAt": "<ISO 8601, or null>",
+  "skills": {
+    "<name>": { "hash": "<sha256 over this skill's installed runtime files>" }
+  }
+}
+```
+
+- `commit` — `git -C <repo> rev-parse HEAD` when the source is a git checkout,
+  else `null`.
+- per-skill `hash` — SHA-256 over that skill's installed runtime files (sorted
+  relative path + bytes). Recorded **independently per skill**, so an unchanged
+  skill's hash never moves when a sibling changes.
+- `installedAt` — system clock at install time.
+
+`--check` reads the receipt (if present) and reports, per skill, the recorded
+hash vs. the repo's current hash alongside the missing/current/stale status —
+"what do I have vs. what's here", per skill. There is no aggregate version to
+over-bump. The load-bearing drift signal remains §3's byte compare; the receipt
+is the durable per-skill record.
 
 ### 5. Docs + privacy scrub
 
@@ -127,7 +145,6 @@ the human-facing record and lets a consumer log the installed revision.
 
 ```
 ai-skills/
-├── VERSION                          # NEW: e.g. 0.1.0
 ├── README.md                        # updated: prose skills, --check, versioning; no private-repo name
 ├── skills/
 │   ├── new-project/                 # unchanged (script-driven)
@@ -153,9 +170,11 @@ ai-skills/
 - **`--check` states:** against scratch dirs — `missing` before install
   (non-zero exit); `current` immediately after install (zero exit); `stale`
   after mutating one installed file (non-zero exit).
-- **Receipt:** install writes `.ai-skills-install.json` with `version` from
-  `VERSION` and the in-scope skill names; `--check` surfaces the recorded
-  version.
+- **Receipt:** install writes `.ai-skills-install.json` recording the source
+  `commit` (when the source is a git checkout) and a per-skill content `hash`
+  for each installed skill. Changing one skill's files changes only that skill's
+  recorded hash, not its siblings'. `--check` surfaces the recorded per-skill
+  hash vs. the current one.
 - Existing `new-project` / `new-git-project` scaffold tests remain green.
 
 ## Out of scope
