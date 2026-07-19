@@ -15,8 +15,11 @@ Codex *plugins* (~/.agents/plugins/marketplace.json), a different concept.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -78,7 +81,58 @@ def _select_skills(skills_root, names):
     return [by_name[n] for n in names]
 
 
-def install(skills_root, dests, names=None) -> dict:
+RECEIPT_NAME = ".ai-skills-install.json"
+
+
+def skill_hash(skill_dir) -> str:
+    h = hashlib.sha256()
+    for rel in runtime_files(skill_dir):
+        h.update(rel.as_posix().encode("utf-8"))
+        h.update(b"\0")
+        h.update((Path(skill_dir) / rel).read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+def source_commit(repo_root):
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True,
+        )
+        return out.stdout.strip() or None
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+
+
+def _read_receipt(dest_root):
+    path = Path(dest_root) / RECEIPT_NAME
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}
+
+
+def _write_receipt(dest_root, skills, commit, installed_at):
+    existing = _read_receipt(dest_root)
+    merged_skills = dict(existing.get("skills", {}))
+    for skill in skills:
+        merged_skills[skill.name] = {"hash": skill_hash(skill)}
+    data = {
+        "commit": commit,
+        "installedAt": installed_at,
+        "skills": merged_skills,
+    }
+    Path(dest_root).mkdir(parents=True, exist_ok=True)
+    (Path(dest_root) / RECEIPT_NAME).write_text(
+        json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def install(skills_root, dests, names=None, commit=None, installed_at=None,
+            write_receipt=True) -> dict:
     skills = _select_skills(skills_root, names)
     report = {"copied": []}
     for skill in skills:
@@ -89,6 +143,9 @@ def install(skills_root, dests, names=None) -> dict:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(skill / rel, target)
                 report["copied"].append(str(target))
+    if write_receipt:
+        for dest_root in dests:
+            _write_receipt(dest_root, skills, commit, installed_at)
     return report
 
 
@@ -113,7 +170,13 @@ def check(skills_root, dests, names=None) -> dict:
         per_dest = {}
         for dest_root in dests:
             status = _classify(skill, Path(dest_root) / skill.name)
-            per_dest[str(dest_root)] = {"status": status}
+            recorded = _read_receipt(dest_root).get("skills", {}).get(
+                skill.name, {}).get("hash")
+            per_dest[str(dest_root)] = {
+                "status": status,
+                "recordedHash": recorded,
+                "currentHash": skill_hash(skill),
+            }
             if status != "current":
                 report["drift"] = True
         report["skills"][skill.name] = per_dest
@@ -122,6 +185,7 @@ def check(skills_root, dests, names=None) -> dict:
 
 def main(argv=None) -> int:
     repo_root = Path(__file__).resolve().parent.parent
+    from datetime import datetime, timezone
     parser = argparse.ArgumentParser(
         description="Install skills into the Claude Code and Codex skill dirs."
     )
@@ -155,7 +219,9 @@ def main(argv=None) -> int:
         print("all skills current")
         return 0
     try:
-        report = install(Path(args.skills_root), dests, args.names or None)
+        report = install(Path(args.skills_root), dests, args.names or None,
+                         commit=source_commit(repo_root),
+                         installed_at=datetime.now(timezone.utc).isoformat())
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

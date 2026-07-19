@@ -171,3 +171,60 @@ def test_check_unknown_skill_raises(tmp_path):
         assert "nope" in str(e) and "alpha" in str(e)
     else:
         raise AssertionError("expected ValueError")
+
+
+import json
+
+
+def test_install_writes_receipt_with_commit_and_per_skill_hash(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    _make_skill(skills, "beta")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest], commit="deadbeef", installed_at="2026-07-19T00:00:00Z")
+    receipt = json.loads((dest / ".ai-skills-install.json").read_text(encoding="utf-8"))
+    assert receipt["commit"] == "deadbeef"
+    assert receipt["installedAt"] == "2026-07-19T00:00:00Z"
+    assert set(receipt["skills"]) == {"alpha", "beta"}
+    assert len(receipt["skills"]["alpha"]["hash"]) == 64  # sha256 hex
+
+
+def test_receipt_hash_is_per_skill_independent(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    _make_skill(skills, "beta")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest])
+    r1 = json.loads((dest / ".ai-skills-install.json").read_text(encoding="utf-8"))
+    # change ONLY beta, reinstall, and confirm alpha's recorded hash is unchanged
+    (skills / "beta" / "SKILL.md").write_text("beta CHANGED", encoding="utf-8")
+    inst.install(skills, [dest])
+    r2 = json.loads((dest / ".ai-skills-install.json").read_text(encoding="utf-8"))
+    assert r2["skills"]["alpha"]["hash"] == r1["skills"]["alpha"]["hash"]
+    assert r2["skills"]["beta"]["hash"] != r1["skills"]["beta"]["hash"]
+
+
+def test_install_partial_merges_receipt(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    _make_skill(skills, "beta")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest], names=["alpha"])
+    inst.install(skills, [dest], names=["beta"])
+    receipt = json.loads((dest / ".ai-skills-install.json").read_text(encoding="utf-8"))
+    assert set(receipt["skills"]) == {"alpha", "beta"}  # beta run kept alpha
+
+
+def test_source_commit_none_when_not_git(tmp_path):
+    assert inst.source_commit(tmp_path) is None
+
+
+def test_check_surfaces_recorded_hash(tmp_path):
+    skills = tmp_path / "skills"
+    _make_skill(skills, "alpha")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest])
+    rep = inst.check(skills, [dest])
+    entry = rep["skills"]["alpha"][str(dest)]
+    assert entry["recordedHash"] == entry["currentHash"]
+    assert entry["recordedHash"] is not None
