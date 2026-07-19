@@ -1,0 +1,11 @@
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.tmp
+
+# Secrets — never commit
+.env
+.env.*
+*.pem
+*.key
+id_rsa
