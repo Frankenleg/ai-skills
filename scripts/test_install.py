@@ -147,6 +147,21 @@ def test_check_cli_exit_codes(tmp_path, capsys):
     assert inst.main(argv_check) == 0          # now installed -> exit 0
 
 
+def test_classify_missing_beats_stale_regardless_of_order(tmp_path):
+    skills = tmp_path / "skills"
+    d = skills / "alpha"
+    (d / "agents").mkdir(parents=True)
+    (d / "SKILL.md").write_text("s", encoding="utf-8")
+    (d / "agents" / "z.yaml").write_text("y", encoding="utf-8")
+    dest = tmp_path / "claude"
+    inst.install(skills, [dest])
+    # one installed file differs (stale), another is gone entirely (missing)
+    (dest / "alpha" / "agents" / "z.yaml").write_text("MUTATED", encoding="utf-8")
+    (dest / "alpha" / "SKILL.md").unlink()
+    rep = inst.check(skills, [dest])
+    assert rep["skills"]["alpha"][str(dest)]["status"] == "missing"
+
+
 def test_check_unknown_skill_raises(tmp_path):
     skills = tmp_path / "skills"
     _make_skill(skills, "alpha")

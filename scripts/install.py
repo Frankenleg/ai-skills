@@ -93,15 +93,17 @@ def install(skills_root, dests, names=None) -> dict:
 
 
 def _classify(skill_dir, installed_dir) -> str:
-    if not Path(installed_dir).exists():
+    installed_dir = Path(installed_dir)
+    if not installed_dir.exists():
         return "missing"
+    any_stale = False
     for rel in runtime_files(skill_dir):
-        inst_file = Path(installed_dir) / rel
+        inst_file = installed_dir / rel
         if not inst_file.exists():
-            return "missing"
+            return "missing"          # missing takes precedence over stale
         if (Path(skill_dir) / rel).read_bytes() != inst_file.read_bytes():
-            return "stale"
-    return "current"
+            any_stale = True          # keep scanning: a later file may be missing
+    return "stale" if any_stale else "current"
 
 
 def check(skills_root, dests, names=None) -> dict:
