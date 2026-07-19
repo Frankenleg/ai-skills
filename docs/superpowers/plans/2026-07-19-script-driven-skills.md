@@ -2,6 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Correction (2026-07-19, post-merge):** the `install.py` snippets below target
+> the Codex skills dir as `~/.agents/skills` — that was wrong. Codex discovers
+> skills under `$CODEX_HOME/skills` (default `~/.codex/skills`); `~/.agents/` is
+> the Codex *plugin* path, not skills. The shipped `scripts/install.py`, README,
+> and AGENTS.md use the corrected `~/.codex/skills` default. See the design
+> spec's "Install & consumption" correction note.
+
 **Goal:** Build the two standalone script-driven skills (`new-project`, `new-git-project`) — each `SKILL.md` + `scaffold.py` + `test_scaffold.py` — plus `scripts/install.py`, `pyproject.toml`, and `README.md`, with `pytest` green.
 
 **Architecture:** Each skill's deterministic core lives in a bundled `scaffold.py` (the "script-driven skill" principle). `SKILL.md` is short prose telling the agent to supply `--name`/`--description` when known and run the script; the *fallback* logic (name → dir basename, description → literal placeholder) lives in `scaffold.py` so it is testable. The two skills are fully standalone (no shared source); `new-git-project/scaffold.py` simply does more (git init + ignore/attributes + commit). Tests live inside each skill folder and run the sibling `scaffold.py` in `tmp_path`.

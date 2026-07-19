@@ -22,7 +22,8 @@ commits containing secrets; enable it once per clone with
 - `skills/<name>/` — a standalone skill: `SKILL.md` + `scaffold.py` +
   `test_scaffold.py`. Each skill is independent (no shared source, no drift guard).
 - `scripts/install.py` — copy each skill's runtime files (`SKILL.md` +
-  `scaffold.py`) into `~/.claude/skills/` and `~/.agents/skills/`.
+  `scaffold.py`) into `~/.claude/skills/` and `~/.codex/skills/`
+  (`$CODEX_HOME/skills` when set).
 
 ## Build / test / run
 
@@ -39,8 +40,10 @@ commits containing secrets; enable it once per clone with
 
 ## Gotchas
 
-- Claude Code reads `~/.claude/skills/`; Codex reads `~/.agents/skills/` — the
-  same skill installs to **both**.
+- Claude Code reads `~/.claude/skills/`; Codex reads `$CODEX_HOME/skills`
+  (default `~/.codex/skills/`) — the same skill installs to **both**. Codex
+  skills do **not** live in `~/.agents/skills/` — that's the Codex *plugin*
+  path (`~/.agents/plugins/marketplace.json`), a different concept.
 
 > Design spec: `docs/superpowers/specs/2026-07-19-ai-skills-design.md`.
 > Implementation plan: `docs/superpowers/plans/2026-07-19-script-driven-skills.md`.

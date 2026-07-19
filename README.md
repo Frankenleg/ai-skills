@@ -34,7 +34,12 @@ Installs each skill's **runtime files** — `SKILL.md` + `scaffold.py` (never th
 `test_*.py`) — into both agents' skill directories:
 
 - Claude Code reads `~/.claude/skills/<name>/`
-- Codex reads `~/.agents/skills/<name>/`
+- Codex reads `$CODEX_HOME/skills/<name>/` (default `~/.codex/skills/<name>/`)
+
+> **Codex path note:** skills go under `$CODEX_HOME/skills` (default
+> `~/.codex/skills`), *not* `~/.agents/skills`. `~/.agents/` is Codex's
+> **plugin** location (`~/.agents/plugins/marketplace.json`) — a different
+> concept — so skills placed there are not discovered.
 
 ### Option A — one command (recommended)
 
@@ -57,10 +62,10 @@ Override any path (useful for automation, testing, or a non-default home):
     python scripts/install.py \
         --skills-root ./skills \
         --claude-dir "$HOME/.claude/skills" \
-        --agents-dir "$HOME/.agents/skills"
+        --codex-dir "$HOME/.codex/skills"
 
 To preview without touching the real agent dirs, point `--claude-dir` /
-`--agents-dir` at scratch directories and diff the result.
+`--codex-dir` at scratch directories and diff the result.
 
 ### Option B — manual copy (for plan→apply / provisioning repos)
 
@@ -70,16 +75,16 @@ shell out to Python, replicate exactly what `install.py` does — for **each**
 
 1. Copy `skills/<name>/SKILL.md`   → `~/.claude/skills/<name>/SKILL.md`
 2. Copy `skills/<name>/scaffold.py` → `~/.claude/skills/<name>/scaffold.py`
-3. Copy the same two files          → `~/.agents/skills/<name>/…`
+3. Copy the same two files          → `~/.codex/skills/<name>/…`
 4. **Do not** copy `test_scaffold.py` — tests stay in this repo, never installed.
 
 ### What gets installed (source → destination)
 
-| Source (in this repo)            | Claude Code dest                       | Codex dest                        |
-|----------------------------------|----------------------------------------|-----------------------------------|
-| `skills/<name>/SKILL.md`         | `~/.claude/skills/<name>/SKILL.md`     | `~/.agents/skills/<name>/SKILL.md`     |
-| `skills/<name>/scaffold.py`      | `~/.claude/skills/<name>/scaffold.py`  | `~/.agents/skills/<name>/scaffold.py`  |
-| `skills/<name>/test_scaffold.py` | *not installed*                        | *not installed*                        |
+| Source (in this repo)            | Claude Code dest                       | Codex dest (`$CODEX_HOME` or `~/.codex`) |
+|----------------------------------|----------------------------------------|------------------------------------------|
+| `skills/<name>/SKILL.md`         | `~/.claude/skills/<name>/SKILL.md`     | `~/.codex/skills/<name>/SKILL.md`        |
+| `skills/<name>/scaffold.py`      | `~/.claude/skills/<name>/scaffold.py`  | `~/.codex/skills/<name>/scaffold.py`     |
+| `skills/<name>/test_scaffold.py` | *not installed*                        | *not installed*                          |
 
 ### Consuming from another repo
 
