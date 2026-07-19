@@ -42,5 +42,7 @@ commits containing secrets; enable it once per clone with
 - Claude Code reads `~/.claude/skills/`; Codex reads `~/.agents/skills/` — the
   same skill installs to **both**.
 
-> Full design: `docs/superpowers/specs/2026-07-19-ai-skills-design.md`.
-> Implementation pending (next step: writing-plans → build the two skills + tests).
+> Design spec: `docs/superpowers/specs/2026-07-19-ai-skills-design.md`.
+> Implementation plan: `docs/superpowers/plans/2026-07-19-script-driven-skills.md`.
+> Both skills, their tests, and `scripts/install.py` are built and green. See
+> `README.md` for install/consumption details.
