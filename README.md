@@ -97,7 +97,10 @@ shell out to Python, replicate exactly what `install.py` does — for **each**
 `missing` / `current` / `stale` (byte comparison) and exits non-zero if any
 drift — copies nothing. Install writes a receipt `.ai-skills-install.json`
 in each skills dir recording the source git commit and a per-skill SHA-256,
-so you can see exactly which revision of each skill a machine has.
+so you can see exactly which revision of each skill a machine has. The
+receipt's top-level `commit`/`installedAt` reflect the most recent install
+run, not any individual skill — per-skill provenance is the per-skill
+SHA-256 `hash`, which is independent per skill.
 
 ### Consuming from another repo
 

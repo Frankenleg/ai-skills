@@ -785,14 +785,13 @@ Make these edits to `README.md`:
 
 In `docs/superpowers/specs/2026-07-19-ai-skills-design.md` and `docs/superpowers/plans/2026-07-19-script-driven-skills.md`, replace every occurrence of the private provisioning repo's name with a generic phrase ("a private provisioning repo" / "a downstream consumer"). Preserve surrounding meaning; only the name changes.
 
-- [ ] **Step 3: Verify no private-repo name remains**
+- [ ] **Step 3: Verify no private identifier remains**
 
-Run: `grep -rni "windows-setup" . --include="*.md" | grep -v "/.git/"`
-Expected: **no output** (every reference removed).
+Use `git grep` — plain `grep -r --include` can silently skip nested directories
+on some platforms, giving a false clean.
 
-Also confirm no other private identifiers leaked:
-Run: `grep -rniE "homelab|cookenas|jtcooke|frankenleg\\.com" . | grep -v "/.git/"`
-Expected: no output.
+Run: `git grep -niE "<private-consumer-repo>|<other-private-identifiers>" -- ':!.superpowers'`
+Expected: **no output** (every private name/identifier removed).
 
 - [ ] **Step 4: Full suite still green (docs-only, sanity)**
 
