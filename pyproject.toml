@@ -1,0 +1,9 @@
+[project]
+name = "ai-skills"
+version = "0.0.0"
+description = "Cross-agent AI skills (Claude Code + Codex) — script-driven, tested."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["skills", "scripts"]
