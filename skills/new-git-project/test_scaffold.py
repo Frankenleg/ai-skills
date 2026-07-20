@@ -16,7 +16,9 @@ CLAUDE_CANONICAL = (
     "     Claude-only instructions below the import if ever needed. -->\n"
 )
 
-SCAFFOLD_FILES = [".gitattributes", ".gitignore", "AGENTS.md", "CLAUDE.md"]
+SCAFFOLD_FILES = [
+    ".gitattributes", ".gitignore", "AGENTS.md", "CLAUDE.md", "docs/decisions.md",
+]
 
 
 def _git(target, *args):
@@ -76,7 +78,11 @@ def test_D_includes_preexisting_nonignored_excludes_ignored(tmp_path):
     (tmp_path / "src" / "existing.txt").write_text("hi\n", encoding="utf-8")
     (tmp_path / ".env").write_text("SECRET=1\n", encoding="utf-8")
     sc.scaffold(tmp_path, "X", "y")
-    assert _tracked(tmp_path) == SCAFFOLD_FILES + ["README.md", "src/existing.txt"]
+    # _tracked() returns sorted paths; sort the expected set too since
+    # docs/decisions.md sorts after README.md.
+    assert _tracked(tmp_path) == sorted(
+        SCAFFOLD_FILES + ["README.md", "src/existing.txt"]
+    )
     assert _git(tmp_path, "status", "--porcelain") == ""
 
 
@@ -90,3 +96,20 @@ def test_idempotent_second_run_no_new_commit(tmp_path):
     assert report2["git_init"] is False
     assert _git(tmp_path, "status", "--porcelain") == ""
     assert _git(tmp_path, "remote") == ""
+
+
+def test_seeds_decisions_log_stub(tmp_path):
+    sc.scaffold(tmp_path, "X", "y")
+    decisions = (tmp_path / "docs" / "decisions.md").read_text(encoding="utf-8")
+    assert decisions.splitlines()[0] == "# Decision records"
+    assert "**Locked by:**" in decisions  # the entry format is documented
+    # Seeded as an empty stub — no real dated entries yet.
+    assert "## 20" not in decisions
+
+
+def test_preexisting_decisions_log_preserved(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "decisions.md").write_text("ORIGINAL\n", encoding="utf-8")
+    report = sc.scaffold(tmp_path, "X", "y")
+    assert (tmp_path / "docs" / "decisions.md").read_text(encoding="utf-8") == "ORIGINAL\n"
+    assert "docs/decisions.md" in report["found"]

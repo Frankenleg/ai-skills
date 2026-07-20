@@ -56,3 +56,17 @@ reverted decision to whichever agent touches it, regardless of its context.
 **Alternatives rejected:** relying on agent memory or commit messages to carry
 decisions across agents.
 **Locked by:** convention (this file) + `AGENTS.md` conventions section.
+
+## 2026-07-19 — Scaffolders seed `docs/decisions.md` into every new project
+
+**Decision:** `new-project` and `new-git-project` both create a
+`docs/decisions.md` stub (only if absent) alongside `AGENTS.md`/`CLAUDE.md`, so a
+new repo starts with the decision log in place. `new-git-project` includes it in
+the initial commit.
+**Reason:** Makes the "record decisions in the repo" convention automatic for new
+projects rather than relying on someone remembering to create the file.
+**Alternatives rejected:** documenting the convention only (no seed); a shared
+helper between the two skills (they are standalone by design, so the template is
+duplicated in each `scaffold.py`).
+**Locked by:** `skills/new-project/test_scaffold.py::test_seeds_decisions_log_stub`,
+`skills/new-git-project/test_scaffold.py::test_seeds_decisions_log_stub`.

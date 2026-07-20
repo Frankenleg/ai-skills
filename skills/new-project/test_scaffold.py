@@ -24,10 +24,18 @@ def test_creates_files_with_supplied_metadata(tmp_path):
     assert "A cool tool." in agents
     assert sc.DEFAULT_DESCRIPTION not in agents
     assert claude == CLAUDE_CANONICAL
-    assert result["created"] == ["AGENTS.md", "CLAUDE.md"]
+    assert result["created"] == ["AGENTS.md", "CLAUDE.md", "docs/decisions.md"]
     assert not (tmp_path / ".git").exists()
     assert not (tmp_path / ".gitignore").exists()
     assert not (tmp_path / ".gitattributes").exists()
+
+
+def test_seeds_decisions_log_stub(tmp_path):
+    sc.scaffold(tmp_path, "X", "y")
+    decisions = (tmp_path / "docs" / "decisions.md").read_text(encoding="utf-8")
+    assert decisions.splitlines()[0] == "# Decision records"
+    assert "**Locked by:**" in decisions
+    assert "## 20" not in decisions  # empty stub, no real dated entries
 
 
 def test_auto_mode_uses_placeholder_and_dir_name(tmp_path):
