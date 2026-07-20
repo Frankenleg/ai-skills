@@ -1,5 +1,7 @@
 # ai-skills
 
+[![CI](https://github.com/Frankenleg/ai-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Frankenleg/ai-skills/actions/workflows/ci.yml)
+
 Cross-agent AI agent skills (Claude Code + Codex). Most skills are
 **script-driven**: each skill's deterministic core lives in a bundled Python
 `scaffold.py`, tested here. Some skills are prose-only. All install into both
@@ -128,10 +130,15 @@ Run the full suite from the repo root:
     pytest
 
 It discovers `skills/*/test_scaffold.py`, `skills/*/test_skill.py`, and
-`scripts/test_install.py` (32 tests). Each test runs a scaffolder or the
-installer in an isolated `tmp_path` and cleans up. pytest is configured for
+`scripts/test_install.py`. Each test runs a scaffolder or the installer in an
+isolated `tmp_path` and cleans up. pytest is configured for
 `--import-mode=importlib` in `pyproject.toml` so identically-named test files
 across skill folders don't collide.
+
+The same suite runs in CI (GitHub Actions) on every push and pull request across
+Linux + Windows and Python 3.9/3.12 — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+Tests that lock a decision (see [`docs/decisions.md`](docs/decisions.md)) therefore
+fail the PR check if an agent reverts them, not just a local run.
 
 ### Secret-scan pre-commit hook
 

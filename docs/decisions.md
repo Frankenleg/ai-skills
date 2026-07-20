@@ -70,3 +70,18 @@ helper between the two skills (they are standalone by design, so the template is
 duplicated in each `scaffold.py`).
 **Locked by:** `skills/new-project/test_scaffold.py::test_seeds_decisions_log_stub`,
 `skills/new-git-project/test_scaffold.py::test_seeds_decisions_log_stub`.
+
+## 2026-07-19 — Enable CI (GitHub Actions pytest)
+
+**Decision:** Run `pytest` in GitHub Actions on every push and PR, across
+Linux + Windows and Python 3.9/3.12 (`.github/workflows/ci.yml`). Supersedes the
+design spec's "CI: deferred."
+**Reason:** Decision-locking tests only protect a decision if they actually run.
+CI runs them automatically on every PR from either agent, so a silently reverted
+decision shows a red check instead of landing unnoticed. The Linux+Windows matrix
+also guards the cross-platform LF/line-ending behavior.
+**Alternatives rejected:** relying on contributors/agents to run pytest locally;
+single-OS CI (would miss Windows line-ending regressions).
+**Locked by:** the workflow itself. NOTE: making a failed check *block* merges
+also requires branch protection on `main` (a GitHub repo setting: require the CI
+status check to pass) — a manual step outside the repo.
