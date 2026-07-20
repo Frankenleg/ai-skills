@@ -37,6 +37,14 @@ commits containing secrets; enable it once per clone with
   skills), not prose — so behavior is repeatable and testable.
 - Skills are **standalone** — two skills may share behavior but never share
   code; each evolves independently.
+- Keep skills **light, cross-platform, and agent-neutral**: `SKILL.md` carries
+  no single-agent or single-shell assumptions (agent-specific bits live in
+  `agents/<agent>.yaml`). Scale rigor to risk rather than exhaustive ceremony.
+- **Encode decisions as tests.** When a convention or a skill's default
+  behavior matters, assert it in that skill's test — so any agent (Claude or
+  Codex) that changes it hits a red test instead of silently reverting it.
+  Shared knowledge lives here and in tests, never only in one agent's memory
+  or a commit message.
 
 ## Gotchas
 
