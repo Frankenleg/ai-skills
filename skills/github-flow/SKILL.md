@@ -1,59 +1,102 @@
 ---
 name: github-flow
-description: "Use when the user asks to commit, push, open a pull request, merge, ship, wrap up, publish, or clean up code changes in a git/GitHub repository. Enforce the user's preferred Feature Branch Workflow / GitHub Flow: branch, code and commit, pull request, review and checks, merge, return to main, pull, then delete the feature branch. Do not commit directly to main/master/default unless the user explicitly requests that exception."
+description: "Use when the user asks to commit, push, publish, open or update a pull request, merge, ship, wrap up, or clean up code changes in a git/GitHub repository. Apply Feature Branch Workflow / GitHub Flow, doing only the stage the user asked for: commit, push, publish, ship, wrap up, and PR creation authorize that step only — never as authorization to merge. Do not commit directly to the repository default branch unless the user explicitly requests it."
 ---
 
 # GitHub Flow
 
-## Core Rule
+Do publishing work on a feature branch, one stage at a time. Scale rigor to
+risk: verify the irreversible steps (push, merge, branch moves, deletion) and
+keep the routine ones (status, commit) light. Before a destructive or dependent
+step, confirm the previous command actually succeeded (check its exit status)
+rather than chaining blindly.
 
-Use Feature Branch Workflow / GitHub Flow for git publishing work.
+## Authorization boundary
 
-Do not commit directly to `main`, `master`, or the repository default branch unless the user explicitly says to commit directly there. When the user says "merge", "ship", "wrap up", "commit this", or similar, interpret that as the full branch, PR, merge, and cleanup workflow unless they clearly ask for a narrower action.
+Perform only the requested stage and its prerequisites — do not escalate:
 
-## Workflow
+- **Commit** — use or create the feature branch, verify the change, commit. Do
+  not push, open a PR, merge, or clean up unless separately asked.
+- **Push / publish** — push the feature branch. Open or update a PR only when
+  asked. Do not merge.
+- **Open / update a PR** — ensure the intended commits are pushed, then create
+  or update the PR. Do not merge.
+- **Ship / wrap up** — take the work through an open, ready PR and stop there.
+  Report it ready; do not merge.
+- **Merge** — merge and clean up only after an explicit instruction to merge.
+  Prior approval to commit, push, publish, ship, wrap up, or open a PR is not
+  authorization to merge.
 
-1. Inspect state:
-   - Run `git status --short --branch`.
-   - Identify the current branch and default branch.
-   - If there are unrelated user changes, preserve them and do not stage them accidentally.
-2. Branch:
-   - If on the default branch, create a descriptively named feature branch before committing.
-   - If already on a feature branch, continue there unless it is clearly unrelated.
-3. Commit:
-   - Stage only intended files.
-   - Run relevant tests/checks before or after committing based on repo norms and change risk.
-   - Commit with a concise message that describes the net change.
-4. Push and PR:
-   - Push the feature branch with upstream tracking.
-   - Open a pull request against the default branch.
-   - Prefer repository PR templates when present.
-   - Use a temp body file or `--body-file` for `gh pr create/edit` to avoid shell quoting problems.
-5. Review and checks:
-   - Summarize the PR URL, changed files, and verification.
-   - If checks or review comments need attention, fix them on the same feature branch and update the PR.
-6. Merge:
-   - When the user asks to merge, merge the PR rather than bypassing it.
-   - Honor the repository's configured merge strategy if discoverable; otherwise default to a merge commit (`--merge`). Use squash or rebase only when the user or repo indicates that preference.
-7. Cleanup:
-   - Switch back to the default branch.
-   - Pull the latest default branch.
-   - Delete the local feature branch.
-   - Delete the remote feature branch when the PR merge did not already do so.
-   - End with `git status --short --branch`.
+Never commit directly to `main`/`master`/the default branch unless the user
+explicitly asks for that exception.
+
+## Branch and commit
+
+1. Run `git status --short --branch`. Stage only intended paths. Never stage
+   secrets, `.env` files, caches, or unrelated edits, and never auto-stash,
+   discard, or commit unrelated changes — if they block a safe branch switch,
+   stop and ask (or use a separate worktree that leaves the current one intact).
+2. If on the default branch, create a feature branch first. Name it by the first
+   that applies: an explicit user name; the repo's naming rule / required agent
+   prefix; an existing branch for the same work; else a short kebab-case summary
+   of the change.
+3. Run the change's relevant tests/checks, then commit with a concise message
+   describing the net change.
+
+## Push and PR
+
+1. Push the feature branch with upstream tracking, then confirm the remote
+   branch now matches local `HEAD`.
+2. Before creating a PR, check for an existing PR for this branch and reuse it:
+   update the open one instead of opening a duplicate. If a prior PR for this
+   branch is merged/closed, or multiple make the target ambiguous, stop and ask.
+   Otherwise open the PR against the default branch.
+3. Build the PR body from the repo's PR template when present; otherwise a
+   concise summary plus a verification section, with any template placeholders
+   resolved. Pass it via `--body-file` (write to a temp file, then remove it) to
+   avoid shell-quoting problems — don't hand-inline a multi-line body.
+4. Report the PR URL, changed files, and verification.
+
+Determine the default branch from a user/repo instruction or the base remote's
+`HEAD`; if that is unclear, ask — don't infer it from a local `main`/`master`
+name. With multiple remotes and no clear base, ask which is the base and which
+receives the branch rather than assuming `origin`. With no remote or no GitHub
+path, do the local branch/commit work and stop, explaining what's missing (a
+GitHub auth/network/API error is a failed GitHub operation, not "no remote").
+
+## Merge (only on explicit instruction)
+
+Before merging, require all of:
+
+- The user explicitly told you to merge this PR.
+- Local tests pass and every required GitHub check is green (not pending).
+- The PR is open, targets the default branch, and its head matches the pushed
+  branch and local `HEAD`.
+- Unrelated user changes are preserved.
+
+Merge strategy: follow an explicit user/repo instruction or a strategy already
+chosen (e.g. configured auto-merge); otherwise **default to a merge commit
+(`--merge`)**. Use squash or rebase only when the user or repo indicates it.
+Don't silently switch strategy if the chosen one is unavailable — stop and ask.
+
+## Clean up (after a verified merge)
+
+1. Confirm the PR is actually merged (state MERGED) before cleaning up.
+2. Switch to the default branch without stashing or discarding unrelated
+   changes, and fast-forward it from the base remote.
+3. Delete the remote feature branch if the merge didn't already remove it, then
+   the local branch. A branch that is already gone is success, not an error. If
+   the local branch won't delete because a squash/rebase left its commits
+   "unmerged," force-delete only after confirming the PR merged.
+4. End on the default branch; run `git status --short --branch` and report the
+   PR URL, merge strategy, verification, branch cleanup, and any preserved work.
 
 ## Safety
 
-- Never use destructive commands such as `git reset --hard`, force-push, or branch deletion when unsure which branch contains unique work. Ask first.
-- Never stage secrets, `.env` files, generated caches, or unrelated user edits.
-- If network or GitHub CLI access is needed and sandboxed, request escalation with a narrow `gh` or `git push` prefix.
-- If the repo has no remote or no GitHub PR path, stop after the local feature-branch commit and explain the missing piece.
-
-## Recovery: accidental commit on the default branch
-
-If a commit was already made directly to the default branch by mistake and has not been pushed:
-
-1. Create a feature branch at the current commit.
-2. Move the default branch back to its upstream or prior commit using a non-destructive branch update, avoiding loss of uncommitted changes.
-3. Continue with push, PR, merge, and cleanup from the feature branch.
-4. Explain the recovery clearly to the user.
+- Never `git reset --hard`, force-push, or delete a branch when unsure which
+  branch holds unique work — ask first.
+- To undo an accidental, unpushed commit on the default branch: first create a
+  feature branch at the current commit, then move the default branch ref back to
+  its upstream with `git branch -f <default> <upstream>` (never `git reset
+  --hard`), preserving uncommitted work. Then continue only the authorized
+  stage and explain the recovery.
