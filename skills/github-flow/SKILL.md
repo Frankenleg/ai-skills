@@ -135,12 +135,14 @@ After creation or update, use `gh pr view` to confirm that the PR's head object
 ID matches the pushed branch and its `baseRefName` equals the discovered default
 branch.
 
-Create the PR body in a securely created, uniquely named OS temporary file
-(for example, `New-TemporaryFile` or `mktemp`). Record its exact path, pass that
-path via `gh pr create/edit --body-file`, and remove that exact file in a
-`finally`-style cleanup on success or failure. Never use a predictable shared
-filename or wildcard cleanup. Do not substitute `--fill` or an inline body for
-the required body-file lifecycle.
+Build the PR body from the repository's PR template when one exists; otherwise
+include a concise summary and verification section. Resolve or remove template
+placeholders before submission. Write the body to a securely created, uniquely
+named OS temporary file (for example, `New-TemporaryFile` or `mktemp`). Record
+its exact path, pass that path via `gh pr create/edit --body-file`, and remove
+that exact file in a `finally`-style cleanup on success or failure. Never use a
+predictable shared filename or wildcard cleanup. Do not substitute `--fill` or
+an inline body for the required body-file lifecycle.
 
 ## Stage postconditions
 

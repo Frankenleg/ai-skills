@@ -170,12 +170,15 @@ def test_pr_creation_is_idempotent_for_every_existing_pr_state():
 
 def test_pr_body_temp_file_has_exact_success_and_failure_cleanup():
     section = _section(_skill_text(), "Create or update a PR idempotently")
-    assert "securely created, uniquely named OS temporary file" in section
-    assert "--body-file" in section
-    assert "remove that exact file" in section
-    assert "on success or failure" in section
-    assert "Never use a predictable shared\nfilename or wildcard cleanup." in section
-    assert "Do not substitute `--fill` or an inline body" in section
+    normalized = re.sub(r"\s+", " ", section)
+    assert "repository's PR template when one exists" in normalized
+    assert "Resolve or remove template placeholders" in normalized
+    assert "securely created, uniquely named OS temporary file" in normalized
+    assert "--body-file" in normalized
+    assert "remove that exact file" in normalized
+    assert "on success or failure" in normalized
+    assert "Never use a predictable shared filename or wildcard cleanup." in normalized
+    assert "Do not substitute `--fill` or an inline body" in normalized
 
 
 def test_each_requested_stage_has_an_explicit_postcondition():
