@@ -44,7 +44,8 @@ commits containing secrets; enable it once per clone with
   behavior matters, assert it in that skill's test — so any agent (Claude or
   Codex) that changes it hits a red test instead of silently reverting it.
   Shared knowledge lives here and in tests, never only in one agent's memory
-  or a commit message.
+  or a commit message. Record non-obvious decisions (and their rationale) in
+  [`docs/decisions.md`](docs/decisions.md).
 
 ## Gotchas
 
