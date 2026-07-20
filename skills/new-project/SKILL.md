@@ -29,6 +29,9 @@ in `scaffold.py`; your only judgment is the project **name** and a one-line
    Omit `--name` and/or `--description` to accept the defaults. `--target`
    defaults to the current directory.
 
+   It writes `AGENTS.md`, `CLAUDE.md`, and a `docs/decisions.md` decision-log
+   stub.
+
 3. **Report** the files it created or skipped, and state any defaults used so
    the user can correct them. The script never touches git and never overwrites
-   an existing `AGENTS.md`/`CLAUDE.md`.
+   an existing file.

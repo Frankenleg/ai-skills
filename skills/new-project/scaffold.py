@@ -40,6 +40,29 @@ CLAUDE_CONTENT = """\
      Claude-only instructions below the import if ever needed. -->
 """
 
+DECISIONS_PATH = "docs/decisions.md"
+
+DECISIONS_TEMPLATE = """\
+# Decision records
+
+Non-obvious decisions for this project, recorded here (not only in an agent's
+memory) so any coding agent shares one source of truth. Append a new dated entry
+at the bottom; never rewrite history. When a decision has a testable surface,
+lock it with a test and cite it under **Locked by**.
+
+Format per entry: **Decision** / **Reason** / **Alternatives rejected** /
+**Locked by**.
+
+<!-- Append entries below, newest last:
+
+## YYYY-MM-DD — <short title>
+**Decision:** ...
+**Reason:** ...
+**Alternatives rejected:** ...
+**Locked by:** <test path, or "convention only">
+-->
+"""
+
 
 def render_agents(name: str, description: str) -> str:
     return AGENTS_TEMPLATE.format(name=name, description=description)
@@ -51,9 +74,9 @@ def _write(path: Path, content: str) -> None:
 
 
 def scaffold(target, name: str, description: str) -> dict:
-    """Create AGENTS.md and CLAUDE.md under target. Never touches git.
+    """Create AGENTS.md, CLAUDE.md, and docs/decisions.md under target.
 
-    Existing AGENTS.md/CLAUDE.md are preserved (reported as skipped).
+    Never touches git. Existing files are preserved (reported as skipped).
     Returns {"created": [...], "skipped": [...]}.
     """
     target = Path(target)
@@ -62,11 +85,13 @@ def scaffold(target, name: str, description: str) -> dict:
     for fname, content in (
         ("AGENTS.md", render_agents(name, description)),
         ("CLAUDE.md", CLAUDE_CONTENT),
+        (DECISIONS_PATH, DECISIONS_TEMPLATE),
     ):
         p = target / fname
         if p.exists():
             skipped.append(fname)
         else:
+            p.parent.mkdir(parents=True, exist_ok=True)
             _write(p, content)
             created.append(fname)
     return {"created": created, "skipped": skipped}

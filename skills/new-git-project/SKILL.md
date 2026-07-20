@@ -30,9 +30,10 @@ after `new-project` (it just adds git), or again on an already-set-up project.
    Omit `--name` and/or `--description` to accept the defaults. `--target`
    defaults to the current directory. The script is idempotent — it initializes
    git on `main` only if needed, creates each of `.gitignore`,
-   `.gitattributes`, `AGENTS.md`, `CLAUDE.md` only if missing (existing files
-   kept byte-for-byte), and makes the `Initial project scaffold` commit only if
-   the repo has no history. It **never** creates a remote.
+   `.gitattributes`, `AGENTS.md`, `CLAUDE.md`, `docs/decisions.md` only if
+   missing (existing files kept byte-for-byte), and makes the
+   `Initial project scaffold` commit only if the repo has no history. It
+   **never** creates a remote.
 
 3. **Report** what it did — git initialized or already present, which files were
    created vs. kept, whether the initial commit was made, and any defaults used.

@@ -13,7 +13,7 @@ skills into themselves.
 
 | Skill | What it does | Needs git? |
 |-------|--------------|------------|
-| [`new-project`](skills/new-project/SKILL.md) | Scaffold agent instruction files: a light canonical `AGENTS.md` + a `CLAUDE.md` that imports it. Never touches git. | no |
+| [`new-project`](skills/new-project/SKILL.md) | Scaffold agent instruction files: a light canonical `AGENTS.md`, a `CLAUDE.md` that imports it, and a `docs/decisions.md` decision-log stub. Never touches git. | no |
 | [`new-git-project`](skills/new-git-project/SKILL.md) | Everything `new-project` does **plus** `git init` on `main`, minimal `.gitignore` + `.gitattributes`, and an initial commit. Never creates a remote. | yes (`git` on PATH) |
 | [`github-flow`](skills/github-flow/SKILL.md) | Enforce Feature Branch Workflow / GitHub Flow: branch, commit, PR, merge, cleanup. Prose skill (no script). | yes (git/gh) |
 
@@ -22,7 +22,7 @@ Each script-driven skill is fully standalone: `skills/<name>/` holds `SKILL.md`
 tells the agent to pass the project name and one-line description it knows; the
 fallback (name → current directory basename, description → literal placeholder)
 lives in `scaffold.py` so it is deterministic and tested. Both scaffolds are
-idempotent and never overwrite an existing `AGENTS.md`/`CLAUDE.md`.
+idempotent and never overwrite an existing file.
 
 A skill is any `skills/<name>/` containing a `SKILL.md`. A `scaffold.py` is
 optional: **script-driven** skills bundle one (with tests); **prose** skills

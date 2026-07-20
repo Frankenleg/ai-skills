@@ -64,6 +64,29 @@ GITATTRIBUTES_CONTENT = """\
 *.sh text eol=lf
 """
 
+DECISIONS_PATH = "docs/decisions.md"
+
+DECISIONS_TEMPLATE = """\
+# Decision records
+
+Non-obvious decisions for this project, recorded here (not only in an agent's
+memory) so any coding agent shares one source of truth. Append a new dated entry
+at the bottom; never rewrite history. When a decision has a testable surface,
+lock it with a test and cite it under **Locked by**.
+
+Format per entry: **Decision** / **Reason** / **Alternatives rejected** /
+**Locked by**.
+
+<!-- Append entries below, newest last:
+
+## YYYY-MM-DD — <short title>
+**Decision:** ...
+**Reason:** ...
+**Alternatives rejected:** ...
+**Locked by:** <test path, or "convention only">
+-->
+"""
+
 
 def render_agents(name: str, description: str) -> str:
     return AGENTS_TEMPLATE.format(name=name, description=description)
@@ -116,17 +139,19 @@ def scaffold(target, name: str, description: str) -> dict:
         _git(target, "symbolic-ref", "HEAD", "refs/heads/main")
         report["git_init"] = True
 
-    # 2-3. create the four scaffold files, only if missing
+    # 2-3. create the scaffold files, only if missing
     for fname, content in (
         (".gitignore", GITIGNORE_CONTENT),
         (".gitattributes", GITATTRIBUTES_CONTENT),
         ("AGENTS.md", render_agents(name, description)),
         ("CLAUDE.md", CLAUDE_CONTENT),
+        (DECISIONS_PATH, DECISIONS_TEMPLATE),
     ):
         p = target / fname
         if p.exists():
             report["found"].append(fname)
         else:
+            p.parent.mkdir(parents=True, exist_ok=True)
             _write(p, content)
             report["created"].append(fname)
 
