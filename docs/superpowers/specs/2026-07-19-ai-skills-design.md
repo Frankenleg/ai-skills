@@ -28,6 +28,8 @@ other repos *reference* rather than *copy*.
 - **Consumption:** clone + copy (fits a downstream consumer's plan→apply). A `scripts/install.py`
   gives anyone a one-command install.
 - **CI: deferred** (may add a GitHub Actions pytest workflow later).
+  _Update 2026-07-19: added — see `.github/workflows/ci.yml` and the CI entry in
+  `docs/decisions.md`._
 
 ## Repository layout
 
@@ -141,7 +143,7 @@ no unrelated files.
 
 ## Out of scope / deferred
 
-- CI (GitHub Actions pytest) — deferred.
+- CI (GitHub Actions pytest) — ~~deferred~~ added 2026-07-19.
 - Remote creation for scaffolded projects — never (deliberate separate step).
 - A remote for `ai-skills` itself — the user creates it when ready (public).
 
